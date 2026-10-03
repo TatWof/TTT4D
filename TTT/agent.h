@@ -1,0 +1,165 @@
+#ifndef TTT_AGENT_H
+#define TTT_AGENT_H
+
+#include <vector>
+#include <array>
+#include <random>
+#include "precompute.h"
+#include "board.h"
+#include "log.h"
+
+using TTT4D::BOARD;
+using TTT4D::LOG::PLAY;
+
+namespace TTT4D
+{
+
+
+struct AGENT
+{
+    BOARD board;
+    int turn;
+    int alpha, beta;
+    int value{0};
+    PLAY p;
+    std::array<bool, 81> cull1, cull2;
+    std::array<int, 162> evals{};
+
+
+    AGENT(BOARD board, int turn, int alpha, int beta) 
+        : board{board}, turn{turn}, alpha{alpha}, beta{beta} 
+        { for (size_t i = 0; i < 81; i++) cull1[i] = cull2[i] = false; }
+
+    int THINK()
+    {
+        auto t = optimize(board);
+        size_t i;
+        int x;
+        int extrema;
+        
+        if (t.pos != -1)
+        {
+            p = t;
+            (turn % 2 == 0) ? value += 1 : value += -1;
+            return value;
+        }
+
+        for (i = 0; i < 81; i++)
+        {
+            BOARD b = board;
+            if (!cull1[i])
+            {
+                b[i] = 1;
+                AGENT a{b, turn + 1, alpha, beta};
+                evals[i] = a.THINK();
+                if (turn % 2 == 0)  if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
+                else                if (evals[i] <= alpha) return evals[i]; else beta = std::max(beta, evals[i]);
+            }
+            if (!cull2[i])
+            {
+                b[i] = 2;
+                AGENT a{b, turn + 1, alpha, beta};
+                evals[i + 81] = a.THINK();
+                if (turn % 2 == 0)  if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
+                else                if (evals[i] <= alpha) return evals[i]; else beta = std::max(beta, evals[i]);
+            }
+        }
+        
+        int valsum{};
+        
+        for (size_t i = 0; i < evals.size(); i++)
+        {
+            if (turn % 2 == 0)
+            {
+                if (evals[i] > extrema) 
+                {
+                    extrema = evals[i]; x = i;
+                }
+            }
+            else
+            {
+                if (evals[i] < extrema) 
+                {
+                    extrema = evals[i]; x = i;
+                }
+            }
+            valsum += evals[i];
+        }
+
+        if (x < 81) p = PLAY{x, 1};
+        else        p = PLAY{x - 81, 2};
+
+        return valsum;
+    }
+    
+    PLAY optimize(BOARD& b)
+    {
+        std::vector<std::array<int, 3>> vec;
+        PRECOMPUTE::trituple_extracter(vec);
+
+        if(turn == 0) 
+        {
+            return PLAY{0, ((rand() % 2) ? 1 : 2)};
+        }
+
+        for (size_t i = 0; i < 81; i++)
+        {
+            int sign = board[i];
+            
+            if (sign != 0)
+            {
+                if (cull1[i] || cull2[i]) continue;
+
+                auto v = PRECOMPUTE::trituple_extractor(i, vec);
+
+                for (size_t i = 0; i < v.size(); i++)
+                {
+                    auto triple = v[i];
+                    
+                    if (i == triple[0])
+                    {
+                        if (board[triple[1]] == sign) return PLAY{triple[2], sign};
+                        if (board[triple[2]] == sign) return PLAY{triple[1], sign};
+                        if (board[triple[1]] == 0 && board[triple[2]] == 0)
+                        switch (sign)
+                        {
+                        case 1: cull1[triple[1]] = cull1[triple[2]] = true; break;
+                        case 2: cull2[triple[1]] = cull2[triple[2]] = true; break;
+                        default: break;
+                        }
+                        
+                    }
+                    else if(i == triple[1])
+                    {
+                        if (board[triple[0]] == sign) return PLAY{triple[2], sign};
+                        if (board[triple[2]] == sign) return PLAY{triple[0], sign};
+                        if (board[triple[0]] == 0 && board[triple[2]] == 0)
+                        switch (sign)
+                        {
+                        case 1: cull1[triple[0]] = cull1[triple[2]] = true; break;
+                        case 2: cull2[triple[0]] = cull2[triple[2]] = true; break;
+                        default: break;
+                        }
+                    }
+                    else if (i == triple[2])
+                    {
+                        if (board[triple[0]] == sign) return PLAY{triple[1], sign};
+                        if (board[triple[1]] == sign) return PLAY{triple[0], sign};
+                        if (board[triple[0]] == 0 && board[triple[1]] == 0)
+                        switch (sign)
+                        {
+                        case 1: cull1[triple[0]] = cull1[triple[1]] = true; break;
+                        case 2: cull2[triple[0]] = cull2[triple[1]] = true; break;
+                        default: break;
+                        }
+                    }
+                }
+            }
+        }
+        return PLAY{-1,0};
+    }
+};
+    
+}
+
+#endif
