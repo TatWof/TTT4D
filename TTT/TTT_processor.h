@@ -1,5 +1,5 @@
-#ifndef TTT_PROCESSOR_H
-#define TTT_PROCESSOR_H
+#ifndef TTT4D_PROCESSOR_H
+#define TTT4D_PROCESSOR_H
 
 #include "board.h"
 #include <stddef.h>
@@ -17,14 +17,13 @@ class PROCESSOR
 {
     private:
     using dofunction = std::function<void(bool&, int, int, ARGS...)>;
-
-    bool kill{false};
-
+    
     void DO_BASE(int pos, int coef, ARGS... args)
     {
+        bool kill{false};
         func(kill, pos, coef, args...);
 
-        if (kill) throw 0; // starts kill sequence
+        if (kill) throw 0; // starts kill chain
     }
     
     void DO_X(int pos, ARGS... args)          { DO_BASE(pos, 1, args...); }

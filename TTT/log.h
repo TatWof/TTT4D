@@ -1,5 +1,5 @@
-#ifndef TTT_LOG_H
-#define TTT_LOG_H
+#ifndef TTT4D_LOG_H
+#define TTT4D_LOG_H
 
 #include <vector>
 

@@ -1,5 +1,5 @@
-#ifndef PRINTER_H
-#define PRINTER_H
+#ifndef TTT4D_PRINTER_H
+#define TTT4D_PRINTER_H
 
 #include <sstream>
 #include <iomanip>
@@ -9,7 +9,6 @@ using TTT4D::BOARD;
 
 namespace TTT4D::PRINTER
 {
-
     enum class PRINTMODE
     {
         DEBUGMODE,

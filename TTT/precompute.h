@@ -58,7 +58,7 @@ namespace TTT4D::PRECOMPUTE
         file.close();
     }
 
-    std::vector<std::array<int, 3>> trituple_extractor(int pos, std::vector<std::array<int, 3>>& vec)
+    std::vector<std::array<int, 3>> trituple_match(int pos, std::vector<std::array<int, 3>>& vec)
     {
         std::vector<std::array<int, 3>> temp;
         

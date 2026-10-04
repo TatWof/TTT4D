@@ -1,5 +1,5 @@
-#ifndef TTT_AGENT_H
-#define TTT_AGENT_H
+#ifndef TTT4D_AGENT_H
+#define TTT4D_AGENT_H
 
 #include <vector>
 #include <array>
@@ -7,13 +7,15 @@
 #include "precompute.h"
 #include "board.h"
 #include "log.h"
+#include "utility.h"
 
 using TTT4D::BOARD;
 using TTT4D::LOG::PLAY;
+using TTT4D::UTILITY::playerturncheck;
 
 namespace TTT4D
 {
-
+    
 
 struct AGENT
 {
@@ -34,13 +36,11 @@ struct AGENT
     {
         auto t = optimize(board);
         size_t i;
-        int x;
-        int extrema;
         
         if (t.pos != -1)
         {
             p = t;
-            (turn % 2 == 0) ? value += 1 : value += -1;
+            (UTILITY::playerturncheck(turn)) ? value += 1 : value += -1;
             return value;
         }
 
@@ -52,7 +52,7 @@ struct AGENT
                 b[i] = 1;
                 AGENT a{b, turn + 1, alpha, beta};
                 evals[i] = a.THINK();
-                if (turn % 2 == 0)  if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
+                if (UTILITY::playerturncheck(turn))  if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
                 else                if (evals[i] <= alpha) return evals[i]; else beta = std::max(beta, evals[i]);
             }
             if (!cull2[i])
@@ -60,16 +60,18 @@ struct AGENT
                 b[i] = 2;
                 AGENT a{b, turn + 1, alpha, beta};
                 evals[i + 81] = a.THINK();
-                if (turn % 2 == 0)  if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
+                if (UTILITY::playerturncheck(turn))  if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
                 else                if (evals[i] <= alpha) return evals[i]; else beta = std::max(beta, evals[i]);
             }
         }
         
         int valsum{};
+        int x;
+        int extrema;
         
         for (size_t i = 0; i < evals.size(); i++)
         {
-            if (turn % 2 == 0)
+            if (UTILITY::playerturncheck(turn))
             {
                 if (evals[i] > extrema) 
                 {
@@ -110,7 +112,7 @@ struct AGENT
             {
                 if (cull1[i] || cull2[i]) continue;
 
-                auto v = PRECOMPUTE::trituple_extractor(i, vec);
+                auto v = PRECOMPUTE::trituple_match(i, vec);
 
                 for (size_t i = 0; i < v.size(); i++)
                 {

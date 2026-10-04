@@ -1,5 +1,5 @@
-#ifndef TTT_CHECKER_H
-#define TTT_CHECKER_H
+#ifndef TTT4D_CHECKER_H
+#define TTT4D_CHECKER_H
 
 #include <array>
 #include "board.h"
@@ -9,6 +9,8 @@ using TTT4D::BOARD;
 
 using TTT4D::PROCESSOR;
 
+namespace TTT4D::CHECKER
+{
 void checkfunc(bool& kill, int pos, int coef, BOARD& board, bool& win)
 {
     std::array<int, 3> c;
@@ -19,13 +21,14 @@ void checkfunc(bool& kill, int pos, int coef, BOARD& board, bool& win)
     return;
 }
 
-bool CHECK(BOARD& board)
+bool check(BOARD& board)
 {
     PROCESSOR<BOARD&, bool&> procker{checkfunc};
     bool temp{false};
 
     procker.DO__ER(board, temp);
     return temp;
+}
 }
 
 #endif
