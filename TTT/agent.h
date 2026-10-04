@@ -15,36 +15,38 @@ using TTT4D::UTILITY::playerturncheck;
 
 namespace TTT4D
 {
-    
+    #define PUNISHMENT 1
 
 struct AGENT
 {
     BOARD board;
     int turn;
     int alpha, beta;
-    int value{0};
-    PLAY p;
+    
+    PLAY p{-1, 0};
     std::array<bool, 81> cull1, cull2;
     std::array<int, 162> evals{};
 
-
+    AGENT(BOARD board, int turn) : AGENT(board, turn, -10000, +10000) {}
+    
+    
     AGENT(BOARD board, int turn, int alpha, int beta) 
         : board{board}, turn{turn}, alpha{alpha}, beta{beta} 
         { for (size_t i = 0; i < 81; i++) cull1[i] = cull2[i] = false; }
 
     int THINK()
     {
-        auto t = optimize(board);
-        size_t i;
+        int value{0};
         
-        if (t.pos != -1)
+        optimize(board);
+        
+        if (p.pos != -1)
         {
-            p = t;
             (UTILITY::playerturncheck(turn)) ? value += 1 : value += -1;
             return value;
         }
 
-        for (i = 0; i < 81; i++)
+        for (size_t i = 0; i < 81; i++)
         {
             BOARD b = board;
             if (!cull1[i])
@@ -52,16 +54,20 @@ struct AGENT
                 b[i] = 1;
                 AGENT a{b, turn + 1, alpha, beta};
                 evals[i] = a.THINK();
-                if (UTILITY::playerturncheck(turn))  if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
-                else                if (evals[i] <= alpha) return evals[i]; else beta = std::max(beta, evals[i]);
+                if (UTILITY::playerturncheck(turn))  
+                    if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
+                else 
+                    if (evals[i] <= alpha) return evals[i]; else beta = std::min(beta, evals[i]);
             }
             if (!cull2[i])
             {
                 b[i] = 2;
                 AGENT a{b, turn + 1, alpha, beta};
                 evals[i + 81] = a.THINK();
-                if (UTILITY::playerturncheck(turn))  if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
-                else                if (evals[i] <= alpha) return evals[i]; else beta = std::max(beta, evals[i]);
+                if (UTILITY::playerturncheck(turn))  
+                    if (evals[i] >= beta) return evals[i]; else alpha = std::max(alpha, evals[i]);
+                else 
+                    if (evals[i] <= alpha) return evals[i]; else beta = std::min(beta, evals[i]);
             }
         }
         
@@ -94,14 +100,14 @@ struct AGENT
         return valsum;
     }
     
-    PLAY optimize(BOARD& b)
+    void optimize(BOARD& b)
     {
         std::vector<std::array<int, 3>> vec;
         PRECOMPUTE::trituple_extracter(vec);
 
         if(turn == 0) 
         {
-            return PLAY{0, ((rand() % 2) ? 1 : 2)};
+            p = PLAY{0, ((rand() % 2) ? 1 : 2)};
         }
 
         for (size_t i = 0; i < 81; i++)
@@ -120,45 +126,63 @@ struct AGENT
                     
                     if (i == triple[0])
                     {
-                        if (board[triple[1]] == sign) return PLAY{triple[2], sign};
-                        if (board[triple[2]] == sign) return PLAY{triple[1], sign};
+                        if (board[triple[1]] == sign) p = PLAY{triple[2], sign};
+                        if (board[triple[2]] == sign) p = PLAY{triple[1], sign};
                         if (board[triple[1]] == 0 && board[triple[2]] == 0)
                         switch (sign)
                         {
-                        case 1: cull1[triple[1]] = cull1[triple[2]] = true; break;
-                        case 2: cull2[triple[1]] = cull2[triple[2]] = true; break;
+                        case 1: 
+                            cull1[triple[1]] = cull1[triple[2]] = true;
+                            evals[triple[0]] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
+                            break;
+                        case 2: 
+                            cull2[triple[1]] = cull2[triple[2]] = true;
+                            evals[triple[0] + 81] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
+                            break;
                         default: break;
                         }
                         
                     }
                     else if(i == triple[1])
                     {
-                        if (board[triple[0]] == sign) return PLAY{triple[2], sign};
-                        if (board[triple[2]] == sign) return PLAY{triple[0], sign};
+                        if (board[triple[0]] == sign) p = PLAY{triple[2], sign};
+                        if (board[triple[2]] == sign) p = PLAY{triple[0], sign};
                         if (board[triple[0]] == 0 && board[triple[2]] == 0)
                         switch (sign)
                         {
-                        case 1: cull1[triple[0]] = cull1[triple[2]] = true; break;
-                        case 2: cull2[triple[0]] = cull2[triple[2]] = true; break;
+                        case 1: 
+                            cull1[triple[0]] = cull1[triple[2]] = true;
+                            evals[triple[1]] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
+                            break;
+                        case 2: 
+                            cull2[triple[0]] = cull2[triple[2]] = true;
+                            evals[triple[1] + 81] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
+                            break;
                         default: break;
                         }
                     }
                     else if (i == triple[2])
                     {
-                        if (board[triple[0]] == sign) return PLAY{triple[1], sign};
-                        if (board[triple[1]] == sign) return PLAY{triple[0], sign};
+                        if (board[triple[0]] == sign) p = PLAY{triple[1], sign};
+                        if (board[triple[1]] == sign) p = PLAY{triple[0], sign};
                         if (board[triple[0]] == 0 && board[triple[1]] == 0)
                         switch (sign)
                         {
-                        case 1: cull1[triple[0]] = cull1[triple[1]] = true; break;
-                        case 2: cull2[triple[0]] = cull2[triple[1]] = true; break;
+                        case 1: 
+                            cull1[triple[0]] = cull1[triple[1]] = true;
+                            evals[triple[2]] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
+                            break;
+                        case 2: 
+                            cull2[triple[0]] = cull2[triple[1]] = true;
+                            evals[triple[2] + 81] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT;
+                            break;
                         default: break;
                         }
                     }
                 }
             }
         }
-        return PLAY{-1,0};
+        p = PLAY{-1,0};
     }
 };
     
