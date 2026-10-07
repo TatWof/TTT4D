@@ -69,6 +69,7 @@ struct AGENT
                 else 
                     if (evals[i] <= alpha) return evals[i]; else beta = std::min(beta, evals[i]);
             }
+            b[i] = 0;
         }
         
         int valsum{};
