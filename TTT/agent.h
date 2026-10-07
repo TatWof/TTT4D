@@ -120,69 +120,51 @@ struct AGENT
 
                 auto v = PRECOMPUTE::trituple_match(i, vec);
 
-                for (size_t i = 0; i < v.size(); i++)
+                for (size_t j = 0; j < v.size(); j++)
                 {
-                    auto triple = v[i];
+                    auto triple = v[j];
                     
-                    if (i == triple[0])
+                    for (size_t k = 0; k < 3; k++)
                     {
-                        if (board[triple[1]] == sign) p = PLAY{triple[2], sign};
-                        if (board[triple[2]] == sign) p = PLAY{triple[1], sign};
-                        if (board[triple[1]] == 0 && board[triple[2]] == 0)
-                        switch (sign)
-                        {
-                        case 1: 
-                            cull1[triple[1]] = cull1[triple[2]] = true;
-                            evals[triple[0]] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
-                            break;
-                        case 2: 
-                            cull2[triple[1]] = cull2[triple[2]] = true;
-                            evals[triple[0] + 81] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
-                            break;
-                        default: break;
-                        }
+                        std::vector<int> t{triple[0], triple[1], triple[2]};
+                        t.erase(t.begin() + k);
                         
-                    }
-                    else if(i == triple[1])
-                    {
-                        if (board[triple[0]] == sign) p = PLAY{triple[2], sign};
-                        if (board[triple[2]] == sign) p = PLAY{triple[0], sign};
-                        if (board[triple[0]] == 0 && board[triple[2]] == 0)
-                        switch (sign)
+                        if (i == triple[j])
                         {
-                        case 1: 
-                            cull1[triple[0]] = cull1[triple[2]] = true;
-                            evals[triple[1]] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
-                            break;
-                        case 2: 
-                            cull2[triple[0]] = cull2[triple[2]] = true;
-                            evals[triple[1] + 81] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
-                            break;
-                        default: break;
-                        }
-                    }
-                    else if (i == triple[2])
-                    {
-                        if (board[triple[0]] == sign) p = PLAY{triple[1], sign};
-                        if (board[triple[1]] == sign) p = PLAY{triple[0], sign};
-                        if (board[triple[0]] == 0 && board[triple[1]] == 0)
-                        switch (sign)
-                        {
-                        case 1: 
-                            cull1[triple[0]] = cull1[triple[1]] = true;
-                            evals[triple[2]] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT; 
-                            break;
-                        case 2: 
-                            cull2[triple[0]] = cull2[triple[1]] = true;
-                            evals[triple[2] + 81] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT;
-                            break;
-                        default: break;
+                            culler(sign, i, t);
                         }
                     }
                 }
             }
         }
         p = PLAY{-1,0};
+    }
+
+    void culler(int sign, int basepos, std::vector<int> postions)
+    {
+        if (board[postions[1]] == sign) 
+        {
+            p = PLAY{postions[2], sign};
+            return;
+        }
+        if (board[postions[2]] == sign) 
+        {
+            p = PLAY{postions[1], sign};
+            return;
+        }
+        
+        switch (sign)
+        {
+            case 1: 
+                cull1[postions[0]] = cull1[postions[1]] = true;
+                evals[basepos] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT;
+                break;
+            case 2: 
+                cull2[postions[0]] = cull2[postions[1]] = true;
+                evals[basepos] = ((playerturncheck(turn)) ? -1 : 1) * PUNISHMENT;
+                break;
+            default: break;
+        }
     }
 };
     
